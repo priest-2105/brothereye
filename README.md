@@ -1,37 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# brothereye
 
-## Getting Started
+natural events intelligence — a continuous watch on Earth's natural events,
+built on the [NASA EONET v3](https://eonet.gsfc.nasa.gov/) API.
 
-First, run the development server:
+every wildfire, storm, volcano, flood, and landslide tracked by NASA and its
+partner agencies, plotted on one map and refreshed every five minutes.
+
+---
+
+## what it watches
+
+- **the watch** (`/watch`) — full-bleed interactive map. filter by category,
+  status, time window, and bounding box. click a pin for sources, magnitude,
+  and timeline.
+- **signals** (`/signals`) — 365-day analytics. stacked area of events by
+  category over time, longest-running events, most active regions, and source
+  attribution.
+- **regions** (`/regions`) — personal watch areas. define a bounding box,
+  see every event active inside it. saved to the browser — no account.
+- **the catalog** (`/catalog`) — twelve categories, each with its own
+  deep-dive page.
+- **event permalinks** (`/events/[id]`) — shareable detail pages that unfurl
+  cleanly and link back to source agencies.
+
+---
+
+## stack
+
+- **next.js 16** (app router, server components, route handlers)
+- **typescript**
+- **tailwind css v4** — design tokens via `@theme`
+- **maplibre gl** + CARTO dark-matter tiles (no token required)
+- **geist sans / mono** + **instrument serif** via `next/font`
+- **nasa eonet v3** — proxied through `/api/events` with 5-minute revalidation
+
+no chart library — all charts are pure SVG. no database, no auth.
+
+---
+
+## getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+server components fetch live from EONET on render, cached for five minutes.
+the `/watch` page hits the local `/api/events` proxy for client-side filter
+changes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### scripts
 
-## Learn More
+```bash
+npm run dev      # dev server
+npm run build    # production build
+npm run start    # serve the build
+npm run lint     # eslint
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── layout.tsx          root shell — fonts, nav, footer
+│   ├── page.tsx            landing
+│   ├── globals.css         tokens + .bg-grid
+│   ├── watch/              interactive map
+│   ├── signals/            analytics dashboard
+│   ├── regions/            saved watch areas
+│   ├── catalog/            categories index + deep dives
+│   ├── events/[id]/        shareable event permalinks
+│   └── api/
+│       ├── events/         EONET events proxy
+│       ├── categories/     EONET categories proxy
+│       └── sources/        EONET sources proxy
+├── components/
+│   ├── nav.tsx, footer.tsx, wordmark.tsx
+│   ├── stat.tsx, section-heading.tsx
+│   ├── event-card.tsx, event-drawer.tsx, category-badge.tsx
+│   ├── map/                map-canvas, filter-panel, legend
+│   └── charts/             category-stack, duration-bars, region-grid
+├── lib/
+│   ├── eonet.ts            typed EONET client
+│   ├── categories.ts       category registry + colors
+│   ├── format.ts           coord, date, duration formatters
+│   ├── aggregate.ts        stats: by-category, durations, regions
+│   └── bbox.ts             bbox parse / format / math
+└── hooks/
+    └── use-events.ts       client-side event fetch
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## design
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# brothereye
+- **dark cartographic** — near-black base, restrained hierarchy, editorial
+  serif for display, clean sans for UI, monospace for data
+- **lowercase brand** — always `brothereye`
+- **verbs of observation** — watch, track, witness, observe, record
+- **data is mono and literal** — `38.7749° N`, `2,300 ha`, `2026-04-24T14:23Z`
+- **attribution, always** — every page credits NASA EONET; every event
+  links back to its source agency
+
+---
+
+## data
+
+all event data comes from [NASA EONET v3](https://eonet.gsfc.nasa.gov/).
+this project is not affiliated with NASA. event metadata is subject to
+[EONET's disclaimer](https://eonet.gsfc.nasa.gov/what-is-eonet).
+
+map tiles are [CARTO dark matter](https://carto.com/basemaps/),
+© OpenStreetMap contributors, © CARTO.

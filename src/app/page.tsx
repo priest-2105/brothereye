@@ -1,65 +1,109 @@
-import Image from "next/image";
+import Link from "next/link";
+import { safeFetchEvents } from "@/lib/eonet";
+import { CATEGORIES } from "@/lib/categories";
+import { countByCategory, sortByDurationDesc, sortByClosedDesc } from "@/lib/aggregate";
+import { EventCard } from "@/components/event-card";
+import { SectionHeading } from "@/components/section-heading";
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function LandingPage() {
+  const [open, closed] = await Promise.all([
+    safeFetchEvents({ status: "open" }),
+    safeFetchEvents({ status: "closed", days: 30, limit: 20 }),
+  ]);
+
+  const byCategory = countByCategory(open);
+  const activeCategories = Object.keys(byCategory).length;
+  const longestOpen = sortByDurationDesc(open).slice(0, 5);
+  const recentlyClosed = sortByClosedDesc(closed).slice(0, 5);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main>
+      <div className="max-w-4xl mx-auto px-6 pt-24 pb-28">
+        <section className="text-center mb-24">
+          <div className="text-muted text-sm mb-6">Now watching</div>
+          <h1 className="font-display text-foreground text-[88px] md:text-[120px] leading-[0.95] tracking-tight">
+            {open.length} events
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="font-display text-muted text-2xl md:text-3xl leading-snug mt-3">
+            open across {activeCategories} categories
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <p className="text-muted text-lg leading-relaxed max-w-xl mx-auto mt-10">
+            brothereye keeps a continuous watch on Earth&apos;s natural events — every
+            wildfire, storm, volcano, and flood tracked by NASA and its partner agencies,
+            plotted on one map, refreshed every five minutes.
+          </p>
+          <div className="flex items-center justify-center gap-4 mt-10">
+            <Link
+              href="/watch"
+              className="inline-flex items-center justify-center bg-foreground text-background rounded-full px-6 py-3 text-sm hover:opacity-90 transition-opacity"
+            >
+              Open the map
+            </Link>
+            <Link
+              href="/signals"
+              className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm text-foreground hover:bg-surface-raised transition-colors"
+            >
+              See the signals →
+            </Link>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-28">
+          {Object.values(CATEGORIES).map((cat) => {
+            const count = byCategory[cat.slug] ?? 0;
+            return (
+              <Link
+                key={cat.slug}
+                href={`/catalog/${cat.slug}`}
+                className="bg-surface card-soft rounded-xl p-5 flex items-center justify-between hover:-translate-y-0.5 transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: cat.hex }}
+                  />
+                  <span className="text-foreground">{cat.label}</span>
+                </div>
+                <span className="text-muted tabular-nums">{count}</span>
+              </Link>
+            );
+          })}
+        </section>
+
+        <section className="mb-24">
+          <SectionHeading
+            eyebrow="Still burning"
+            title="The longest open events"
+            body="Some events last days. Some last years. These have been open the longest."
+          />
+          <div className="grid gap-3">
+            {longestOpen.map((ev) => (
+              <EventCard key={ev.id} event={ev} />
+            ))}
+          </div>
+          <Link
+            href="/watch"
+            className="inline-block text-foreground hover:text-brand mt-8 text-sm transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            See all open events →
+          </Link>
+        </section>
+
+        <section>
+          <SectionHeading
+            eyebrow="Recently closed"
+            title="What just ended"
+            body="Events close when their source agency marks them resolved."
+          />
+          <div className="grid gap-3">
+            {recentlyClosed.map((ev) => (
+              <EventCard key={ev.id} event={ev} />
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
